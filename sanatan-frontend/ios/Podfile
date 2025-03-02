@@ -1,0 +1,47 @@
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+# Use frameworks with static linking
+use_frameworks! :linkage => :static
+
+# Load the permissions setup script
+require_relative '../node_modules/react-native-permissions/scripts/setup'
+
+target 'sanatan' do
+  config = use_native_modules!
+  
+  # Setup permissions here (in the target block)
+  setup_permissions(['LocationWhenInUse'])
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :hermes_enabled => true
+  )
+
+  target 'sanatanTests' do
+    inherit! :complete
+    # Pods for testing
+  end
+
+  post_install do |installer|
+    # Fix Xcode 15 warnings
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      end
+    end
+    
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false
+    )
+  end
+end

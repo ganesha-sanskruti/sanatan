@@ -1,0 +1,19 @@
+current directory: /Users/amitabhtrivedy/sanatan/vendor/bundle/ruby/3.2.0/gems/nkf-0.2.0/ext/nkf
+/Users/amitabhtrivedy/.rbenv/versions/3.2.2/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /Users/amitabhtrivedy/sanatan/vendor/bundle/ruby/3.2.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250221-2614-zyjvcg sitelibdir\=./.gem.20250221-2614-zyjvcg clean
+
+current directory: /Users/amitabhtrivedy/sanatan/vendor/bundle/ruby/3.2.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250221-2614-zyjvcg sitelibdir\=./.gem.20250221-2614-zyjvcg
+compiling nkf.c
+linking shared-object nkf.bundle
+ld: warning: ignoring duplicate libraries: '-lruby.3.2'
+
+current directory: /Users/amitabhtrivedy/sanatan/vendor/bundle/ruby/3.2.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250221-2614-zyjvcg sitelibdir\=./.gem.20250221-2614-zyjvcg install
+/usr/bin/install -c -m 0755 nkf.bundle ./.gem.20250221-2614-zyjvcg
+
+current directory: /Users/amitabhtrivedy/sanatan/vendor/bundle/ruby/3.2.0/gems/nkf-0.2.0/ext/nkf
+make DESTDIR\= sitearchdir\=./.gem.20250221-2614-zyjvcg sitelibdir\=./.gem.20250221-2614-zyjvcg clean
