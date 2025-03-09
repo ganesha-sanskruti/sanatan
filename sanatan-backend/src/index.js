@@ -1,10 +1,12 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
-const fs = require('fs'); // Moved to top - only declare once
+const fs = require('fs');
 require('dotenv').config();
+
+// Import the connectDB function
+const connectDB = require('./db');
 
 // Wrap the entire initialization in a try-catch to catch any errors
 try {
@@ -40,12 +42,10 @@ try {
   app.use(express.json());
   app.use(morgan('dev'));
 
-
   const postsUploadsDir = path.join(__dirname, '../uploads/posts');
-if (!fs.existsSync(postsUploadsDir)) {
-  fs.mkdirSync(postsUploadsDir, { recursive: true });
-}
-
+  if (!fs.existsSync(postsUploadsDir)) {
+    fs.mkdirSync(postsUploadsDir, { recursive: true });
+  }
 
   // Create all necessary upload directories
   const createUploadDirectories = () => {
@@ -84,7 +84,6 @@ if (!fs.existsSync(postsUploadsDir)) {
   app.use('/api', groupPostRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/temples', templeRoutes);
-
   
   // app.use('/api/bookings', bookingRoutes); AT temporary fix need to uncomment 1-Mar-2025
   
@@ -112,10 +111,20 @@ if (!fs.existsSync(postsUploadsDir)) {
     res.json({ message: 'Welcome to Sanatan API' });
   });
 
-  // Database connection
-  mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((err) => console.error('MongoDB connection error:', err));
+  // Connect to MongoDB using the function from db.js
+  connectDB()
+    .then(() => {
+      // Start server after successful DB connection
+      const PORT = process.env.PORT || 5001;
+      // app.listen(PORT, '0.0.0.0', () => {
+        app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    })
+    .catch(err => {
+      console.error('Failed to connect to database. Server not started:', err);
+      process.exit(1);
+    });
 
   // Error handling middleware
   app.use((err, req, res, next) => {
@@ -125,11 +134,6 @@ if (!fs.existsSync(postsUploadsDir)) {
       message: err.message || 'Something went wrong!',
       error: process.env.NODE_ENV === 'development' ? err.message : 'An error occurred'
     });
-  });
-
-  const PORT = process.env.PORT || 5001;
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
   });
 
 } catch (error) {
