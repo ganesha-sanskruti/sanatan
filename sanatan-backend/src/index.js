@@ -6,7 +6,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 // Import the connectDB function
-const connectDB = require('./db');
+const connectDB = require('./config/db');
 
 // Wrap the entire initialization in a try-catch to catch any errors
 try {
