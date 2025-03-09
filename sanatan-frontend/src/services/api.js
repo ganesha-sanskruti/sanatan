@@ -4,6 +4,9 @@ import { Platform } from 'react-native';
 
 // Dynamic Base URL for different platforms
 const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://your-render-app-name.onrender.com/api';  // You'll replace this with your actual Render URL
+  }
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:5001/api';  // Android emulator
   }
