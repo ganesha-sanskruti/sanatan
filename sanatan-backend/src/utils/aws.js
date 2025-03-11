@@ -31,19 +31,12 @@ const path = require('path');
 
 
 
-
-// Configure AWS with explicit values
-// const awsConfig = {
-//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-//   region: process.env.AWS_REGION || 'ap-south-1'
-// };
-
 const awsConfig = {
-  accessKeyId: 'AKIAUMYCIJX2DNR3FRN7',
-  secretAccessKey: '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',
-  region: 'ap-south-1'
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION || 'ap-south-1'
 };
+
 
 console.log('Setting AWS config with region:', awsConfig.region);
 AWS.config.update(awsConfig);

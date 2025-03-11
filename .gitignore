@@ -83,3 +83,9 @@ yarn-error.log
 # API keys and secrets
 *.pem
 *.key
+
+node_modules/
+.env
+uploads/*
+!uploads/.gitkeep
+npm-debug.log

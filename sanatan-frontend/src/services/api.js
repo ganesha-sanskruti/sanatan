@@ -1,12 +1,17 @@
-
+// src/services/api.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
+// Hardcoded CloudFront domain - replace with your actual domain
+export const CLOUDFRONT_DOMAIN='https://d1kuoh6u9b5lqc.cloudfront.net';
+
 // Dynamic Base URL for different platforms
 const getBaseUrl = () => {
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://your-render-app-name.onrender.com/api';  // You'll replace this with your actual Render URL
-  }
+  // Always use the Render backend URL
+  return 'https://sanatan-backend-174c.onrender.com/api';
+  
+  // Development URLs - commented out since we're now using the cloud backend
+  /*
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:5001/api';  // Android emulator
   }
@@ -14,11 +19,13 @@ const getBaseUrl = () => {
     return 'http://localhost:5001/api';  // iOS simulator
   }
   return 'http://127.0.0.1:5001/api';  // Fallback
+  */
 };
 
 const BASE_URL = getBaseUrl();
 
 console.log('🌐 API Base URL:', BASE_URL, 'Platform:', Platform.OS);  // Enhanced logging
+console.log('☁️ CloudFront Domain:', CLOUDFRONT_DOMAIN);
 
 /**
  * Get the authentication token from storage
@@ -44,7 +51,6 @@ export const removeToken = async () => {
 /**
  * Basic error handling for API responses
  */
-// In src/services/api.js update the handleResponse function:
 const handleResponse = async (response) => {
   try {
     if (response.status === 404) {
@@ -79,16 +85,36 @@ const handleResponse = async (response) => {
   }
 };
 
+/**
+ * Get optimized image URL for CloudFront (for applying image transformations)
+ * @param {string} url - Original image URL
+ * @param {object} options - Image options (width, quality, etc.)
+ * @returns {string} - Optimized image URL
+ */
+export const getOptimizedImageUrl = (url, options = {}) => {
+  if (!url) return url;
+  
+  // If not a CloudFront URL, return as is
+  if (!url.includes(CLOUDFRONT_DOMAIN)) return url;
+  
+  // Default options
+  const { width = 600, quality = 80 } = options;
+  
+  // Add query parameters for Lambda@Edge image transformations
+  // Note: This assumes you have set up Lambda@Edge for image processing
+  // If not, these parameters will be ignored but won't harm anything
+  return `${url}?width=${width}&quality=${quality}`;
+};
 
 /**
  * Make an API request with authentication
  */
 export const apiRequest = async (endpoint, method = 'GET', data = null, isFormData = false) => {
   const url = BASE_URL.endsWith('/api') 
-  ? `${BASE_URL}${endpoint}` 
-  : `${BASE_URL}/api${endpoint}`;
+    ? `${BASE_URL}${endpoint}` 
+    : `${BASE_URL}/api${endpoint}`;
 
-console.log(`Full Request URL: ${url}`);
+  console.log(`Full Request URL: ${url}`);
   
   // Get the token from storage
   const token = await getToken();
@@ -102,11 +128,16 @@ console.log(`Full Request URL: ${url}`);
     headers['Content-Type'] = 'application/json';
   }
   
+  // Add cache control headers for GET requests
+  if (method === 'GET') {
+    headers['Cache-Control'] = 'no-cache';
+    headers['Pragma'] = 'no-cache';
+  }
+  
   console.log(`API Request: ${method} ${endpoint}`);
   if (token) {
     console.log(`Adding auth token to request: ${token.substring(0, 15)}...`);
   }
-  console.log(`Full Request URL: ${url}`);
   
   const options = {
     method,
@@ -133,6 +164,102 @@ console.log(`Full Request URL: ${url}`);
       stack: error.stack
     });
     throw error;
+  }
+};
+
+// -----------------------
+// Media Handling Utilities
+// -----------------------
+
+/**
+ * Process image before upload (resize/compress client-side)
+ * This helps reduce bandwidth and storage costs
+ * @param {object} imageObject - Image object from image picker
+ * @returns {object} - Processed image object
+ */
+export const processImageForUpload = async (imageObject) => {
+  if (!imageObject) return null;
+  
+  // If we have a third-party image processor library, we could use it here
+  // For now, we're just returning the original image
+  // In a production app, consider using something like react-native-image-manipulator
+  
+  return {
+    uri: imageObject.uri,
+    type: imageObject.type || 'image/jpeg',
+    name: imageObject.fileName || `image-${Date.now()}.jpg`,
+  };
+};
+
+// -----------------------
+// Cache Management Utilities
+// -----------------------
+
+/**
+ * Clear image cache (for maintenance or troubleshooting)
+ * Note: This relies on FastImage being used throughout the app
+ */
+export const clearImageCache = async () => {
+  try {
+    // If you're using FastImage
+    const FastImage = require('react-native-fast-image').default;
+    await FastImage.clearDiskCache();
+    await FastImage.clearMemoryCache();
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to clear image cache:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Manage cache size based on age and size
+ */
+export const manageCacheSize = async () => {
+  try {
+    const CACHE_LAST_CLEARED_KEY = 'cache_last_cleared_timestamp';
+    const MAX_CACHE_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    
+    // Get last cleared timestamp
+    const lastClearedStr = await AsyncStorage.getItem(CACHE_LAST_CLEARED_KEY);
+    const lastCleared = lastClearedStr ? parseInt(lastClearedStr, 10) : 0;
+    const now = Date.now();
+    
+    // If cache hasn't been cleared in the specified time
+    if (now - lastCleared > MAX_CACHE_AGE) {
+      // Clear image cache
+      await clearImageCache();
+      console.log('Image cache cleared due to age');
+      
+      // Update last cleared timestamp
+      await AsyncStorage.setItem(CACHE_LAST_CLEARED_KEY, now.toString());
+    } else {
+      console.log('Cache age check passed, no clearing needed');
+    }
+    
+    return { success: true, cleared: now - lastCleared > MAX_CACHE_AGE };
+  } catch (error) {
+    console.error('Error managing cache:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Pre-populate the image cache with commonly used images
+ */
+export const prefetchCommonImages = async (urls = []) => {
+  try {
+    if (!urls.length) return { success: true };
+    
+    // If you're using FastImage
+    const FastImage = require('react-native-fast-image').default;
+    FastImage.preload(
+      urls.map(uri => ({ uri }))
+    );
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to prefetch images:', error);
+    return { success: false, error: error.message };
   }
 };
 
@@ -177,6 +304,13 @@ export const verifyOTP = async (data) => {
   }
   
   return response;
+};
+
+/**
+ * Resend OTP
+ */
+export const resendOTP = async (data) => {
+  return await apiRequest('/auth/resend-otp', 'POST', data);
 };
 
 /**

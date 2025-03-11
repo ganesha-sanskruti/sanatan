@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import { colors, typography, spacing, commonStyles } from '../../styles/styles';
+import FastImage from 'react-native-fast-image';
 //import { apiRequest } from '../../services/api';
 import { getCurrentUser } from '../../services/api';
 import { createPost } from '../../services/postApi';
@@ -174,9 +175,10 @@ const handlePost = async () => {
         {/* Selected Image Preview */}
         {selectedImage && (
           <View style={styles.imagePreview}>
-            <Image 
+            <FastImage 
               source={{ uri: selectedImage.uri }}
               style={styles.previewImage}
+              resizeMode={FastImage.resizeMode.cover}
             />
             <TouchableOpacity 
               style={styles.removeImage}

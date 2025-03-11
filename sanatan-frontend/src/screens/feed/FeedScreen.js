@@ -10,9 +10,10 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
-  Image,
+  //Image,
   Alert,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { colors, typography, spacing, commonStyles } from '../../styles/styles';
 
 import { 
@@ -251,14 +252,23 @@ const FeedScreen = ({ navigation }) => {
       {/* Post Content */}
       <Text style={styles.postContent}>{post.content}</Text>
 
-      {/* Post Image (if any) */}
-      {post.image && (
-        <Image 
-          source={{ uri: post.image }} 
-          style={styles.postImage}
-          resizeMode="cover"
-        />
-      )}
+
+          {/* Post Image (if any) */}
+          {post.image && (
+            <FastImage 
+              source={{
+                uri: post.image.startsWith('http') 
+                  ? post.image 
+                  : `https://sanatan-backend-174c.onrender.com/${post.image}`,
+                // Priority levels: low, normal, high
+                priority: FastImage.priority.normal,
+                // Cache: immutable, web, cacheOnly
+                cache: FastImage.cacheControl.immutable
+              }}
+              style={styles.postImage}
+              resizeMode={FastImage.resizeMode.cover}
+            />
+          )}
 
       {/* Post Actions */}
       <View style={styles.postFooter}>

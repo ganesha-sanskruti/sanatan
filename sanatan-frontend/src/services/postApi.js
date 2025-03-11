@@ -1,5 +1,5 @@
 // src/services/postApi.js
-import { apiRequest } from './api';
+import { apiRequest, processImageForUpload, getOptimizedImageUrl } from './api';
 
 /**
  * Get feed posts with pagination
@@ -9,9 +9,6 @@ import { apiRequest } from './api';
 export const getFeedPosts = async (page = 1, limit = 10) => {
   return apiRequest(`/posts/feed?page=${page}&limit=${limit}`);
 };
-
-
-// src/services/postApi.js - Fixed createPost function
 
 /**
  * Create a new post
@@ -25,7 +22,7 @@ export const createPost = async (content, visibility = 'public', image = null) =
     throw new Error('Post content is required');
   }
 
-  // Create post data object first (similar to templeData)
+  // Create post data object first
   const postData = {
     content: content.trim(),
     visibility: visibility
@@ -34,26 +31,38 @@ export const createPost = async (content, visibility = 'public', image = null) =
   // Create FormData for multipart/form-data (for image upload)
   const formData = new FormData();
   
-  // Add all post data fields individually (like in temple API)
+  // Add all post data fields individually
   Object.keys(postData).forEach(key => {
     formData.append(key, postData[key]);
   });
   
   // Add image if provided
   if (image) {
-    formData.append('image', {
-      uri: image.uri,
-      type: 'image/jpeg',
-      name: 'post_image.jpg',
-    });
+    try {
+      // Process image before upload (resize/compress if needed)
+      const processedImage = await processImageForUpload(image);
+      
+      formData.append('image', {
+        uri: processedImage.uri,
+        type: processedImage.type || 'image/jpeg',
+        name: processedImage.name || 'post_image.jpg',
+      });
+      
+      console.log('Adding image to post:', {
+        name: processedImage.name,
+        type: processedImage.type,
+        uri: processedImage.uri.substring(0, 50) + '...' // Log only part of the URI for brevity
+      });
+    } catch (error) {
+      console.error('Error processing image:', error);
+      // Continue without the image if processing fails
+    }
   }
   
   console.log('Creating post with data:', postData);
   
   return apiRequest('/posts', 'POST', formData, true);
 };
-
-
 
 /**
  * Toggle like on a post
@@ -101,10 +110,37 @@ export const getPostById = async (postId) => {
 /**
  * Update a post
  * @param {string} postId - Post ID
- * @param {object} data - Updated post data
+ * @param {object} data - Updated post data (content, visibility)
+ * @param {object} image - Optional new image to upload
  */
-export const updatePost = async (postId, data) => {
-  return apiRequest(`/posts/${postId}`, 'PUT', data);
+export const updatePost = async (postId, data, image = null) => {
+  // If no image update, use regular PUT request
+  if (!image) {
+    return apiRequest(`/posts/${postId}`, 'PUT', data);
+  }
+  
+  // If updating with new image, use FormData
+  const formData = new FormData();
+  
+  // Add text data fields
+  Object.keys(data).forEach(key => {
+    formData.append(key, data[key]);
+  });
+  
+  // Process and add the new image
+  try {
+    const processedImage = await processImageForUpload(image);
+    
+    formData.append('image', {
+      uri: processedImage.uri,
+      type: processedImage.type || 'image/jpeg',
+      name: processedImage.name || 'post_image.jpg',
+    });
+  } catch (error) {
+    console.error('Error processing update image:', error);
+  }
+  
+  return apiRequest(`/posts/${postId}`, 'PUT', formData, true);
 };
 
 /**
@@ -115,4 +151,36 @@ export const updatePost = async (postId, data) => {
  */
 export const getUserPosts = async (userId, page = 1, limit = 10) => {
   return apiRequest(`/posts/user/${userId}?page=${page}&limit=${limit}`);
+};
+
+/**
+ * Get optimized image URL for a post image
+ * @param {string} imageUrl - Original image URL
+ * @param {object} options - Image options (width, quality)
+ */
+export const getPostImageUrl = (imageUrl, options = {}) => {
+  return getOptimizedImageUrl(imageUrl, options);
+};
+
+/**
+ * Prefetch post images for better performance
+ * @param {Array} posts - Array of posts
+ */
+export const prefetchPostImages = async (posts) => {
+  if (!posts || !posts.length) return;
+  
+  try {
+    const FastImage = require('react-native-fast-image').default;
+    
+    // Extract image URLs from posts
+    const imageUrls = posts
+      .filter(post => post.image)
+      .map(post => ({ uri: post.image }));
+    
+    if (imageUrls.length > 0) {
+      FastImage.preload(imageUrls);
+    }
+  } catch (error) {
+    console.error('Failed to prefetch post images:', error);
+  }
 };

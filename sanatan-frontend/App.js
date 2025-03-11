@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { enableScreens } from 'react-native-screens';
 import { View, Text } from 'react-native';
+
+// Cache utilities
+import { manageCacheSize, prefetchCommonImages } from './src/services/api';
 
 // Import screens
 
@@ -169,6 +172,25 @@ const MainTabNavigator = () => {
 };
 
 const App = () => {
+  // Add useEffect for cache management
+  useEffect(() => {
+    // Manage cache size on app startup
+    manageCacheSize().catch(error => {
+      console.warn('Cache management error:', error);
+    });
+
+    // Optional: Prefetch common images 
+    // This can include app logos, common UI elements, etc.
+    prefetchCommonImages([
+      // Add common image URLs here if you have any
+      // Example: 'https://your-cloudfront-domain.com/common/logo.png'
+    ]).catch(error => {
+      console.warn('Image prefetch error:', error);
+    });
+    
+    console.log('✅ Cache management initialized');
+  }, []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator
