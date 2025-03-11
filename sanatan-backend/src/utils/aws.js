@@ -1,24 +1,19 @@
-require('dotenv').config();
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
 
-
-const awsConfig = {
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// Configure AWS with environment variables
+AWS.config.update({
   region: process.env.AWS_REGION || 'ap-south-1'
-};
-
-
-console.log('Setting AWS config with region:', awsConfig.region);
-AWS.config.update(awsConfig);
+});
 
 const s3 = new AWS.S3();
 
 /**
  * Upload a file to S3 and return the CloudFront URL
- * Simplified version with direct upload
+ * @param {Object} file - The file object from multer
+ * @param {String} folder - The folder in S3 to store the file
+ * @returns {Promise<String>} - CloudFront URL or local path
  */
 const uploadToS3 = async (file, folder = 'misc') => {
   try {
@@ -34,14 +29,6 @@ const uploadToS3 = async (file, folder = 'misc') => {
       mimetype: file.mimetype,
       size: file.size
     });
-    
-    // Verify AWS credentials are loaded
-    console.log('Checking AWS credentials...');
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-      console.error('AWS credentials missing from environment');
-      throw new Error('AWS credentials not available');
-    }
-    console.log('AWS credentials verified');
     
     // Read file
     console.log('Reading file from disk:', file.path);
@@ -152,7 +139,6 @@ const deleteFromS3 = async (url) => {
   }
 };
 
-// Export without running tests
 module.exports = {
   uploadToS3,
   deleteFromS3
