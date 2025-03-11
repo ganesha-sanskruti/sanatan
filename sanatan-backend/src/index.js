@@ -1,9 +1,19 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
+
+// Add this near the top of your main app file after dotenv.config()
+console.log('=== ENV VAR CHECK ===');
+console.log('AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? 'Set (starts with ' + process.env.AWS_ACCESS_KEY_ID.substring(0, 5) + ')' : 'NOT SET');
+console.log('AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? 'Set (length ' + process.env.AWS_SECRET_ACCESS_KEY.length + ')' : 'NOT SET');
+console.log('AWS_REGION:', process.env.AWS_REGION || 'NOT SET');
+console.log('S3_BUCKET_NAME:', process.env.S3_BUCKET_NAME || 'NOT SET');
+console.log('CLOUDFRONT_DOMAIN:', process.env.CLOUDFRONT_DOMAIN || 'NOT SET');
+console.log('=== ENV VAR CHECK END ===');
+
 
 // Import the connectDB function
 const connectDB = require('./config/db');
