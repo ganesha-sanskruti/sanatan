@@ -1,34 +1,7 @@
-// const AWS = require('aws-sdk');
-// const fs = require('fs');
-// const path = require('path');
-
-// // Enhanced logging for AWS configuration
-// console.log('AWS Configuration:', {
-//   region: process.env.AWS_REGION || 'Not set',
-//   bucket: process.env.S3_BUCKET_NAME || 'Not set',
-//   cloudfront: process.env.CLOUDFRONT_DOMAIN || 'Not set',
-//   accessKeyId: process.env.AWS_ACCESS_KEY_ID ? 'Set' : 'Not set',
-//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ? 'Set' : 'Not set'
-// });
-
-
-console.log('*** AWS.JS MODULE LOADED FROM:', __filename, '***');
-
 require('dotenv').config();
 const AWS = require('aws-sdk');
-const https = require('https');
-const http = require('http');
 const fs = require('fs');
 const path = require('path');
-
-// Hardcode AWS credentials for the test
-// const awsConfig = {
-//   accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'AKIAUMYCIJX2DNR3FRN7',
-//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '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',
-//   region: process.env.AWS_REGION || 'ap-south-1'
-// };
-
-
 
 
 const awsConfig = {
